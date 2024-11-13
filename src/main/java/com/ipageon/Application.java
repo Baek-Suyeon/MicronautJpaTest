@@ -11,9 +11,10 @@ public class Application {
         ApplicationContext applicationContext = Micronaut.run(Application.class, args);
         GenreController genreController = applicationContext.getBean(GenreController.class);
         Genre genre = new Genre();
-        genre.setName("One00");
+        genre.setId(7L);
+        genre.setName("One001");
 
-        genreController.save(genre);
-        System.err.println(genreController.findByName("One00"));
+        genreController.delete(genre);
+        System.err.println(genreController.findByName("One001"));
     }
 }

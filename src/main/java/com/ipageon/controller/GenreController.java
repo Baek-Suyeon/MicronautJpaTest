@@ -19,4 +19,12 @@ public class GenreController {
     public Genre findByName(String name) {
         return this.genreRepository.findByName(name);
     }
+
+    public void update(Genre genre) {
+        this.genreRepository.update(genre);
+    }
+
+    public void delete(Genre genre) {
+        this.genreRepository.delete(genre);
+    }
 }
