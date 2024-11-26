@@ -4,8 +4,8 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.ipageon</groupId>
     <artifactId>micronautjpatest</artifactId>
-    <version>0.1</version>
-    <packaging>${packaging}</packaging>
+    <version>1.0-SNAPSHOT</version>
+<!--    <packaging>${packaging}</packaging>-->
 
     <parent>
         <groupId>io.micronaut.platform</groupId>
@@ -21,6 +21,9 @@
         <micronaut.aot.packageName>com.ipageon.aot.generated</micronaut.aot.packageName>
         <micronaut.runtime>netty</micronaut.runtime>
         <exec.mainClass>com.ipageon.Application</exec.mainClass>
+        <native.maven.plugin.version>0.10.2</native.maven.plugin.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
     </properties>
 
     <repositories>
@@ -105,8 +108,36 @@
             <artifactId>jdbc</artifactId>
             <version>6.5.1.8.8</version>
         </dependency>
+        <dependency>
+            <groupId>io.micronaut</groupId>
+            <artifactId>micronaut-runtime</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micronaut</groupId>
+            <artifactId>micronaut-graal</artifactId>
+        </dependency>
+        <!-- BouncyCastle 의존성 -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>1.70</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bctls-jdk15on</artifactId>
+            <version>1.70</version>
+        </dependency>
     </dependencies>
+
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>io.micronaut.maven</groupId>
@@ -125,7 +156,7 @@
                 <configuration>
                     <!-- Uncomment to enable incremental compilation -->
                     <!-- <useIncrementalCompilation>false</useIncrementalCompilation> -->
-
+                    <fork>true</fork>
                     <annotationProcessorPaths combine.self="override">
                         <path>
                             <groupId>io.micronaut</groupId>
@@ -171,7 +202,63 @@
                     </compilerArgs>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>com.ipageon.Application</mainClass>
+                            <addClasspath>true</addClasspath>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>native</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <version>${native.maven.plugin.version}</version>
+                        <extensions>true</extensions>
+                        <executions>
+                            <execution>
+                                <id>build-native</id>
+                                <goals>
+                                    <goal>compile-no-fork</goal>
+                                </goals>
+                                <phase>package</phase>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <mainClass>com.ipageon.Application</mainClass>
+                            <buildArgs>
+                                <arg>--no-fallback</arg>
+                                <arg>--enable-http</arg>
+                                <arg>--enable-https</arg>
+                                <arg>-H:+AddAllCharsets</arg>
+                                <arg>--initialize-at-run-time=io.netty,io.netty.buffer,ch.qos.logback,org.slf4j</arg>
+                                <arg>--initialize-at-run-time=org.hibernate.bytecode.internal.bytebuddy</arg>
+                                <arg>--trace-class-initialization=io.netty.buffer.UnpooledHeapByteBuf,io.netty.buffer.PooledByteBufAllocator,ch.qos.logback.classic.Logger</arg>
+                                <arg>-H:ReflectionConfigurationFiles=src/main/resources/META-INF/native-image/reflect-config.json</arg>
+                                <arg>-H:+ReportUnsupportedElementsAtRuntime</arg>
+                                <arg>-H:+AllowIncompleteClasspath</arg>
+                            </buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
